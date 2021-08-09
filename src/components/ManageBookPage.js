@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from "react";
 import BookForm from "./BookForm";
-import * as BookService from "../Services/BookService";
 import { toast } from "react-toastify";
+import { bindActionCreators } from "redux";
+import * as bookActions from "../redux/actions/bookActions";
+import { connect } from "react-redux";
 
-function ManageBookPage(props) {
+const initBook = { title: "", genre: "", author: "", availableQty: "" };
+
+function ManageBookPage({ books, actions, ...props }) {
   const [errors, setErrors] = useState({});
-  const [book, setBook] = useState({
-    title: "",
-    genre: "",
-    author: "",
-    availableQty: "",
-  });
+  const [book, setBook] = useState({ ...initBook });
 
   useEffect(() => {
-    const bookId = props.match.params.bookId;
-    if (bookId) {
-      BookService.GetBookByID(bookId).then((_book) => {
-        setBook(_book);
+    if (books.length === 0) {
+      actions.loadBooks().catch((error) => {
+        alert("Load books failed:- " + error.message);
       });
+    } else {
+      setBook({ ...props.book });
     }
-  }, [props.match.params.bookId]);
+  }, [actions, books.length, props.book]);
 
   function handleChange({ target }) {
     setBook({ ...book, [target.name]: target.value });
@@ -39,11 +39,10 @@ function ManageBookPage(props) {
   async function handleSubmit(event) {
     event.preventDefault();
     if (!isFormValid()) return;
-    await BookService.SaveBook(book).then((result) => setBook(result));
+    await actions.saveBook(book);
     props.history.push("/");
     toast.success("Book saved.");
   }
-
   return (
     <>
       <div className="Applocal">
@@ -63,4 +62,22 @@ function ManageBookPage(props) {
   );
 }
 
-export default ManageBookPage;
+function mapStateToProps(state, ownProps) {
+  const bookId = ownProps.match.params.bookId;
+  const book =
+    bookId && state.books.length > 0
+      ? state.books.find((book) => book._id === bookId)
+      : initBook;
+  return {
+    books: state.books,
+    book,
+  };
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+    actions: bindActionCreators(bookActions, dispatch),
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ManageBookPage);

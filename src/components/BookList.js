@@ -37,7 +37,7 @@ function BookList(props) {
                     type="button"
                     id={book._id}
                     value="Delete"
-                    onClick={props.onClick}
+                    onClick={() => props.onClick(book)}
                   />
                 </td>
               </tr>

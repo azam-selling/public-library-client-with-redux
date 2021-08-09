@@ -1,35 +1,25 @@
 import React, { useState, useEffect } from "react";
 import BookList from "./BookList";
-import { GetBooks, DeleteBook } from "../Services/BookService";
 import { toast } from "react-toastify";
-// import { Prompt } from "react-router-dom";
+import { connect } from "react-redux";
+import * as bookActions from "../redux/actions/bookActions";
 
-function HomePage() {
-  const [books, setBooks] = useState([]);
-  const [load, setLoad] = useState(true);
+function HomePage({ books, loadBooks, deleteBook, ...props }) {
   const [booksFiltered, setBooksFiltered] = useState([]);
+
   useEffect(() => {
-    if (load) {
-      GetBooks().then((result) => {
-        setBooks(result);
-        setBooksFiltered(result);
-        setLoad(false);
+    if (books.length === 0) {
+      loadBooks().catch((error) => {
+        alert("Load books failed: " + error.message);
       });
+    } else {
+      setBooksFiltered(books);
     }
-  }, [load]);
+  }, [books, loadBooks]);
 
-  /*function handleDelete(event) {
-    // <Prompt when={true} message="Do you want to delete?" />;
-    DeleteBook(event.target.id);
-    toast.success("Book deleted.");
-    setLoad(true);
-  }*/
-
-  function handleDelete(event) {
-    // <Prompt when={true} message="Do you want to delete?" />;
-    DeleteBook(event.target.id).then(() => {
+  function handleDelete(book) {
+    deleteBook(book).then(() => {
       toast.success("Book deleted.");
-      setLoad(true);
     });
   }
 
@@ -62,4 +52,15 @@ function HomePage() {
   );
 }
 
-export default HomePage;
+function mapStateToProps(state) {
+  return {
+    books: state.books,
+  };
+}
+
+const mapDispatchToProps = {
+  loadBooks: bookActions.loadBooks,
+  deleteBook: bookActions.deleteBook,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(HomePage);
